@@ -1,22 +1,28 @@
-print('Sup world!')
-
 import socket
 import time # Just for now, we will improve later.
-
-for _ in range(1, 11):
-  print("Go nuts {} time{}".format(_, 's' if _ != 1 else ''))
+import ssl
 
 class Bot:
     def __init__(self):
         self.server = "irc.provisionweb.org"
-        self.port = 6667
+
+        # If we make the port a string, we can prepend it with a plus sign to indicate an SSL connection.
+        self.port = '+6697'
+
         self.nick = "ShitCodedBot"
         self.ident = "shit"
         self.sock = socket.socket() # We assign a new socket object to this class' sock attribute. (self.sock)
+        self.ssl = 0 # Assume false for now.
         self.read = 0
 
     def run(self):
-        self.sock.connect((self.server, self.port)) # A socket object takes a tuple as argument, so don't be alarmed by the double parenthesis around the insertion.
+        if self.port.startswith('+'):
+            self.sock = ssl.wrap_socket(self.sock)
+            print('Wrapped socket in SSL')
+            self.port = self.port[1:] # Remove the plus sign.
+        # A socket object takes a tuple as argument, so don't be alarmed by the double parenthesis around the insertion.
+        # Convert the port to integer.
+        self.sock.connect((self.server, int(self.port)))
         print('Connected')
         self.read = 1
         self.reg_client()
@@ -41,7 +47,7 @@ class Bot:
 
     def listen(self):
         # Here we will read the socket.
-        while (self.read):
+        while self.read:
             recv = self.sock.recv(4096).decode('utf-8')
             if not recv:
                 print('Unable to read socket.')
@@ -57,7 +63,7 @@ class Bot:
                     continue # Skip and continue the loop if empty.
 
                 print('>> '+line)
-                # Now line is a full line, this one we also need to split by list so we can read word by word.
+                # Now line is a full line, this one we also need to split to list so we can read word by word.
                 data = line.split() # We must use different variable names, to prevent conflicts.
 
                 # Let's reply to PING here. We can hardcode it since it is required to keep the connection alive.
